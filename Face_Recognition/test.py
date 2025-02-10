@@ -49,7 +49,9 @@ while True:
         # Vẽ khung và hiển thị kết quả
         cv2.rectangle(imgOriginal, (x, y), (x+w, y+h), (0, 255, 0), 2)
         cv2.rectangle(imgOriginal, (x, y-40), (x+w, y), (0, 255, 0), -1)
-        cv2.putText(imgOriginal, f"{get_className(classIndex)}: {round(probabilityValue * 100, 2)}%",
+        
+        # Chỉ hiển thị tên mà không có tỷ lệ phần trăm
+        cv2.putText(imgOriginal, f"{get_className(classIndex)}", 
                     (x, y-10), font, 0.75, (255, 255, 255), 1, cv2.LINE_AA)
 
     # Hiển thị kết quả trên cửa sổ
