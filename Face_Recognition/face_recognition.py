@@ -17,10 +17,12 @@ def read_customer_data():
         with open('customer_data.csv', mode='r') as file:
             reader = csv.reader(file)
             for row in reader:
-                customers[row[0]] = {  # Dùng số điện thoại hoặc ID là key
-                    'name': row[1],
-                    'visit_count': int(row[2]),
-                }
+                if len(row) == 4:  # Đảm bảo có đủ 4 cột (phone_number, name, visit_count, tier)
+                    customers[row[0]] = {  # Dùng số điện thoại hoặc ID là key
+                        'name': row[1],
+                        'visit_count': int(row[2]),  # Đảm bảo rằng đây là số
+                        'tier': row[3]
+                    }
     return customers
 
 # Lưu dữ liệu khách hàng vào CSV
@@ -94,10 +96,10 @@ def recognize_face():
 
                 # Kiểm tra nếu khuôn mặt đã nhận diện và có thông tin khách hàng
                 customers = read_customer_data()
-                customer_info = customers.get(predicted_name, {'name': 'Unknown', 'tier': 'Not Available'})
+                customer_info = customers.get(predicted_name, {'name': 'Unknown', 'tier': 'Not Available', 'visit_count': 0})
 
                 # Hiển thị tên và hạng khách hàng
-                cv2.putText(frame, f"{customer_info['name']} - {assign_tier(customer_info['visit_count'])}", (x, y-10),
+                cv2.putText(frame, f"{customer_info['name']} - {customer_info['tier']}", (x, y-10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
                 # Cập nhật số lần đến của khách hàng
