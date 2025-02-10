@@ -3,12 +3,19 @@ import numpy as np
 from keras.models import load_model
 import csv
 import os
+import time  # Thêm module time để theo dõi thời gian
 
 # Đường dẫn tới file cascade nhận diện khuôn mặt
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Load mô hình đã huấn luyện
 model = load_model('keras_model.h5')
+
+# Lưu trữ thời gian nhận diện cuối cùng của mỗi khách hàng
+last_recognition_time = {}
+
+# Thời gian giới hạn (30 giây)
+TIME_LIMIT = 30
 
 # Đọc dữ liệu khách hàng từ file CSV
 def read_customer_data():
@@ -47,11 +54,18 @@ def update_customer_visit(phone_number):
     customers = read_customer_data()
     
     if phone_number in customers:
-        customers[phone_number]['visit_count'] += 1
+        current_time = time.time()  # Lấy thời gian hiện tại
+        # Kiểm tra thời gian nhận diện cuối cùng
+        if phone_number not in last_recognition_time or (current_time - last_recognition_time[phone_number]) > TIME_LIMIT:
+            # Cập nhật thời gian nhận diện lần cuối và số lần thăm
+            last_recognition_time[phone_number] = current_time
+            customers[phone_number]['visit_count'] += 1
+            print(f"Đã cộng thêm 1 lần thăm cho {customers[phone_number]['name']}.")  # Chỉ in khi thực sự cộng thêm
     else:
         print("Customer not registered.")
     
     save_customer_data(customers)
+
 
 # Nhận diện và phân tích khuôn mặt từ camera
 def recognize_face():
