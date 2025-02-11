@@ -3,7 +3,7 @@ import numpy as np
 from keras.models import load_model
 import csv
 import os
-import time  # Thêm module time để theo dõi thời gian
+import time
 
 # Đường dẫn tới file cascade nhận diện khuôn mặt
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -15,7 +15,12 @@ model = load_model('keras_model.h5')
 last_recognition_time = {}
 
 # Thời gian giới hạn (30 giây)
-TIME_LIMIT = 30
+TIME_LIMIT = 15
+
+# Thông báo
+show_message = False
+message_time = None
+message_text = ""
 
 # Đọc dữ liệu khách hàng từ file CSV
 def read_customer_data():
@@ -49,8 +54,9 @@ def assign_tier(visit_count):
     else:
         return 'Platinum'
 
-# Cập nhật số lần đến của khách hàng
-def update_customer_visit(phone_number):
+# Cập nhật số lần đến của khách hàng và hiển thị thông báo trên màn hình
+def update_customer_visit(phone_number, frame):
+    global show_message, message_time, message_text
     customers = read_customer_data()
     
     if phone_number in customers:
@@ -60,15 +66,23 @@ def update_customer_visit(phone_number):
             # Cập nhật thời gian nhận diện lần cuối và số lần thăm
             last_recognition_time[phone_number] = current_time
             customers[phone_number]['visit_count'] += 1
-            print(f"Đã cộng thêm 1 lần thăm cho {customers[phone_number]['name']}.")  # Chỉ in khi thực sự cộng thêm
+            print(f"Đã cộng thêm 1 lần thăm cho {customers[phone_number]['name']}.")  # Log vào terminal
+            
+            # Hiển thị thông báo trên màn hình video
+            show_message = True
+            message_time = time.time()  # Ghi lại thời gian hiển thị thông báo
+            message_text = f"xin chaoooooo {customers[phone_number]['name']}"
+        else:
+            # Nếu chưa đủ 30 giây, không làm gì
+            pass
     else:
         print("Customer not registered.")
     
     save_customer_data(customers)
 
-
 # Nhận diện và phân tích khuôn mặt từ camera
 def recognize_face():
+    global show_message, message_time, message_text
     # Mở camera
     cap = cv2.VideoCapture(0)
     
@@ -116,8 +130,13 @@ def recognize_face():
                 cv2.putText(frame, f"{customer_info['name']} - {customer_info['tier']}", (x, y-10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
-                # Cập nhật số lần đến của khách hàng
-                update_customer_visit(predicted_name)
+                # Cập nhật số lần đến của khách hàng và hiển thị thông báo
+                update_customer_visit(predicted_name, frame)
+
+        # Hiển thị thông báo nếu cần thiết
+        if show_message and (time.time() - message_time < 2):  # Hiển thị trong 2 giây
+            cv2.putText(frame, message_text, (50, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
         # Hiển thị video
         cv2.imshow('Face Recognition', frame)
